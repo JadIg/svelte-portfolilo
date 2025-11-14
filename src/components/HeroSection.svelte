@@ -78,7 +78,7 @@
 
         <!-- image in front -->
         <img
-          src="/Sajjad_Ahmed.png"
+          src="./Sajjad_Ahmed.png"
           alt="Sajjad"
           class="relative w-80 h-auto md:w-96 md:h-auto object-cover z-10"
         />
