@@ -62,12 +62,12 @@
       <div class="relative overflow-visible">
         <div
           in:fade={{ duration: 500 }}
-          class="absolute top-10 -left-15 w-32 h-32 border-2 border-sky-500/80 transform rotate-12 animate-spin"
+          class="absolute top-10 -left-15 w-32 h-32 border-2 border-sky-500/80 transform rotate-12 animate-spin overflow-hidden"
           style="animation-duration: 8s;"
         ></div>
         <div
           in:fade={{ duration: 500 }}
-          class="absolute bottom-25 -right-15 w-32 h-32 border-2 border-sky-500/80 transform -rotate-12 animate-bounce"
+          class="absolute bottom-25 -right-15 w-32 h-32 border-2 border-sky-500/80 transform -rotate-12 animate-bounce overflow-hidden"
           style="animation-duration: 3.5s;"
         ></div>
 
