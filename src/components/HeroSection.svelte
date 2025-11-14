@@ -32,9 +32,9 @@
             <span class="text-sky-500 animate-bounce-once">.</span>
           </div>
         </h1>
-        <div class="flex items-center gap-4 mb-8 relative">
+        <div class="flex items-center gap-4 mb-8 relative overflow-hidden">
           <div
-            class="h-1 bg-sky-500 absolute left-0 w-screen -translate-x-full"
+            class="h-1 bg-sky-500 absolute right-full w-[200vw]"
           ></div>
           <div data-aos="fade-right" class="h-1 w-20 bg-sky-500 relative"></div>
           <p class="text-2xl md:text-3xl text-gray-300">I'm Sajjad</p>

@@ -7,7 +7,7 @@
 
 </script>
 
-<main class="bg-gray-950 min-h-screen">
+<main class="bg-gray-950 min-h-screen overflow-x-hidden">
   <Navbar />
   <HeroSection />
   <AboutSection />
