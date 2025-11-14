@@ -18,7 +18,7 @@
 </script>
 
 <div
-  class="w-full grid grid-cols-1 md:grid-cols-2 gap-18 items-center px-8 lg:px-56 py-48 justify-around"
+  class="w-full grid grid-cols-1 md:grid-cols-2 gap-18 items-center px-8 lg:px-56 py-32 md:py-48 justify-around"
   id="about"
 >
   <!-- Left Side -->

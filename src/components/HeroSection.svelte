@@ -21,7 +21,7 @@
 
 <main class="min-h-screenbg-gray-950 text-white mt-6">
   <div
-    class="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-12 lg:gap-24 px-8 lg:px-42 md:pt-20"
+    class="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-24 lg:gap-24 px-8 lg:px-42 md:pt-20"
   >
     <!-- Left Content -->
     <div class="flex-1 space-y-8 pt-12">
