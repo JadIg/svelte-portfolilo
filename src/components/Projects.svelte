@@ -58,11 +58,11 @@
 
   <div
     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
-    data-aos="fade-up"
   >
     {#each projects as project}
       <div
-        class="bg-slate-800 rounded-lg border border-slate-700 p-6 hover:border-sky-500 transition-all"
+        class="bg-slate-800 rounded-lg border border-slate-700 p-6 hover:border-sky-500 transition-all" 
+        data-aos="fade-up"
       >
         <h3 class="text-2xl font-semibold text-white mb-4">{project.name}</h3>
         <p class="text-slate-400 mb-6">{project.description}</p>
