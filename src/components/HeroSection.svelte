@@ -1,22 +1,43 @@
 <script>
   import { fade } from "svelte/transition";
   import { fly } from "svelte/transition";
+  import { gsap } from "gsap";
+  import { SplitText } from "gsap/SplitText";
+  import Icon from "@iconify/svelte";
+
 
   import AOS from "aos";
-  import "aos/dist/aos.css"; // You can also use <link> for styles
-  // ..
+  import "aos/dist/aos.css"; 
+  import { onMount } from "svelte";
+
   AOS.init();
 
   let skills = [
-    "Javascript",
-    "Svelte",
-    "Vue",
-    "Git",
-    "Github",
-    "C#",
-    ".NET",
-    "SQL",
+    { name: "HTML", icon: "devicon:html5" },
+    { name: "CSS", icon: "devicon:css3" },
+    { name: "JavaScript", icon: "logos:javascript" },
+    { name: "Svelte", icon: "logos:svelte-icon" },
+    { name: "Vue", icon: "logos:vue" },
+    { name: "Git", icon: "logos:git-icon" },
+    { name: "GitHub", icon: "logos:github-icon" },
+    { name: "SQL", icon: "devicon:mysql" },
+    { name: "C#", icon: "devicon:csharp" },
+    { name: ".NET", icon: "devicon:dotnetcore" },
   ];
+
+  let titleEl;
+
+  onMount(() => {
+    const split = new SplitText(titleEl, { type: "chars" });
+
+    gsap.from(split.chars, {
+      opacity: 0,
+      y: 10,
+      stagger: 0.09,
+      duration: 1,
+      ease: "power3.out"
+    });
+  });
 </script>
 
 <main class="min-h-screenbg-gray-950 text-white mt-6">
@@ -39,21 +60,25 @@
           <div data-aos="fade-right" class="h-1 w-20 bg-sky-500 relative"></div>
           <p class="text-2xl md:text-3xl text-gray-300">I'm Sajjad</p>
         </div>
-        <h2 class="text-4xl md:text-5xl font-bold mb-8">Software Developer</h2>
+        <h2 bind:this={titleEl} class="text-4xl md:text-5xl font-bold mb-8">Software Developer</h2>
       </div>
 
       <!-- Buttons -->
       <div class="flex flex-wrap gap-4">
         <button
+          onclick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
           class="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded transition-colors cursor-pointer"
         >
           Need a hand?
         </button>
-        <button
-          class="px-8 py-4 border-2 border-sky-500 hover:bg-sky-500/10 text-white font-semibold rounded transition-colors cursor-pointer"
+        <a 
+          href="https://github.com/JadIg/svelte-portfolilo/raw/main/public/Sajjad%20Ahmed%20Mohammed%20CV%20(1).pdf?raw=1" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="px-8 py-4 border-2 border-sky-500 hover:bg-sky-500/10 text-white font-semibold rounded transition-colors cursor-pointer inline-block text-center"
         >
-          My CV
-        </button>
+          Download CV
+        </a>
       </div>
     </div>
 
@@ -89,13 +114,14 @@
   <!-- Skills Section -->
   <div class="py-8 bg-slate-800">
     <div
-      class="flex flex-wrap gap-8 justify-around items-center opacity-40 px-24"
+      class="flex flex-wrap gap-4 justify-around items-center opacity-90 px-24"
     >
       {#each skills as skill}
         <span
-          class="text-xl md:text-2xl font-light tracking-wide hover:text-sky-300 transition-colors cursor-default"
+          class="tracking-wide hover:text-sky-300 transition-colors cursor-default"
+          title={skill.name}
         >
-          {skill}
+          <Icon icon={skill.icon} width="32" height="32" />
         </span>
       {/each}
     </div>

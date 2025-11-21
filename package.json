@@ -16,6 +16,7 @@
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "@iconify/svelte": "^5.1.0",
     "@tailwindcss/vite": "^4.1.17",
     "aos": "^3.0.0-beta.6",
     "gsap": "^3.13.0",
