@@ -1,115 +1,101 @@
 <script>
-  import * as pdfjsLib from "pdfjs-dist";
-  import { onMount, tick } from "svelte";
+  import * as pdfjsLib from 'pdfjs-dist';
+  import { onMount, tick } from 'svelte';
 
   export let show = false;
-  export let pdfPath = "";
+  export let pdfPath = '';
 
   let pdfCanvas;
+  let modalEl;
+  let pdfDoc = null;
   let currentPage = 1;
   let totalPages = 0;
-  let pdfDoc = null;
   let isLoading = false;
   let error = null;
-  let hasLoaded = false;
-  let zoom = 1; // user-controlled zoom (1 = 100%)
-  let fitMode = 'page'; // 'page' = fit full page height+width, 'width' = fit width only
+  let zoom = 1;
+  let fitMode = 'page'; // 'page' or 'width'
 
-  // Set worker path for PDF.js - use unpkg as CDN
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-  onMount(() => {
-    console.log("CVModal mounted, canvas:", pdfCanvas);
-  });
+  function getHeaderHeight() {
+    if (!modalEl) return 0;
+    const header = modalEl.querySelector('[data-cv-header]');
+    return header ? header.getBoundingClientRect().height : 0;
+  }
 
-  async function loadPDF() {
-    console.log("loadPDF called with path:", pdfPath);
-    console.log("Canvas element at load:", pdfCanvas);
-    if (!pdfCanvas) {
-      console.error("Canvas not available! abort loadPDF");
-      return;
-    }
+  async function initPdf() {
+    if (!pdfCanvas) return;
     isLoading = true;
     error = null;
-    hasLoaded = true;
     try {
-      console.log("Starting PDF load...");
-      const loadingTask = pdfjsLib.getDocument(pdfPath);
-      pdfDoc = await loadingTask.promise;
-      console.log("PDF loaded, pages:", pdfDoc.numPages);
+      const task = pdfjsLib.getDocument(pdfPath);
+      pdfDoc = await task.promise;
       totalPages = pdfDoc.numPages;
-    } catch (err) {
-      console.error("Error loading PDF:", err);
-      error = "Failed to load PDF. Please try downloading instead.";
+      currentPage = 1;
+      await renderPage(currentPage);
+    } catch (e) {
+      console.error('PDF load error', e);
+      error = 'Unable to load PDF.';
     } finally {
-      isLoading = false; // ensure canvas visible before render
-    }
-    if (pdfDoc) {
-      await renderPage(1);
-      console.log("First page rendered");
+      isLoading = false;
     }
   }
 
   async function renderPage(pageNum) {
-    if (!pdfDoc || !pdfCanvas) {
-      console.log("renderPage called but missing:", { pdfDoc, pdfCanvas });
-      return;
-    }
-    
+    if (!pdfDoc || !pdfCanvas) return;
     try {
       const page = await pdfDoc.getPage(pageNum);
-      // Determine dynamic scale based on available width
       const baseViewport = page.getViewport({ scale: 1 });
-      const containerEl = pdfCanvas.parentElement;
-      const containerWidth = containerEl?.clientWidth || baseViewport.width;
-      const containerHeight = containerEl?.clientHeight || baseViewport.height;
-      const widthRatio = containerWidth / baseViewport.width;
-      const heightRatio = containerHeight / baseViewport.height;
-      let autoScale = fitMode === 'page' ? Math.min(widthRatio, heightRatio) : widthRatio;
-      let scale = autoScale * zoom;
-      // Device pixel ratio for crispness
+      const container = pdfCanvas.parentElement;
+      const headerH = getHeaderHeight();
+      const availableWidth = (container?.clientWidth || baseViewport.width) - 8; // small padding compensation
+      const availableHeight = (container?.clientHeight || baseViewport.height) - headerH - 16; // header + padding
+      const widthRatio = availableWidth / baseViewport.width;
+      const heightRatio = availableHeight / baseViewport.height;
+      let logicalScale = fitMode === 'page' ? Math.min(widthRatio, heightRatio) : widthRatio;
+      logicalScale = Math.max(0.4, Math.min(logicalScale * zoom, 2));
       const dpr = window.devicePixelRatio || 1;
-      // Effective scale capped to avoid memory blowups
-      const effectiveScale = Math.min(scale, 2) * Math.min(dpr, 2);
-      const viewport = page.getViewport({ scale: effectiveScale });
-      
-      console.log("Viewport dimensions:", viewport.width, "x", viewport.height);
-      
-      const context = pdfCanvas.getContext("2d");
-      // Set intrinsic size accounting for DPR separately for crisp rendering
-      pdfCanvas.width = viewport.width * dpr;
-      pdfCanvas.height = viewport.height * dpr;
-      // CSS size at logical pixels (so layout doesn't explode)
-      pdfCanvas.style.width = viewport.width + 'px';
-      pdfCanvas.style.height = viewport.height + 'px';
-      // Scale context for DPR
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      
-      console.log("Canvas dimensions set to:", pdfCanvas.width, "x", pdfCanvas.height);
-      
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-      
-      console.log("Page render complete");
-      
+      const viewport = page.getViewport({ scale: logicalScale * dpr });
+      const ctx = pdfCanvas.getContext('2d');
+      ctx.setTransform(1,0,0,1,0,0);
+      pdfCanvas.width = viewport.width;
+      pdfCanvas.height = viewport.height;
+      pdfCanvas.style.width = (viewport.width / dpr) + 'px';
+      pdfCanvas.style.height = (viewport.height / dpr) + 'px';
+      await page.render({ canvasContext: ctx, viewport }).promise;
       currentPage = pageNum;
-    } catch (error) {
-      console.error("Error rendering page:", error);
+    } catch (e) {
+      console.error('Render error', e);
     }
   }
 
-  function nextPage() {
+  async function nextPage() {
     if (currentPage < totalPages) {
-      renderPage(currentPage + 1);
+      await renderPage(++currentPage);
+    }
+  }
+  async function prevPage() {
+    if (currentPage > 1) {
+      await renderPage(--currentPage);
     }
   }
 
-  function prevPage() {
-    if (currentPage > 1) {
-      renderPage(currentPage - 1);
-    }
+  function zoomIn() {
+    zoom = Math.min(zoom + 0.1, 2);
+    renderPage(currentPage);
+  }
+  function zoomOut() {
+    zoom = Math.max(zoom - 0.1, 0.4);
+    renderPage(currentPage);
+  }
+  function resetZoom() {
+    zoom = 1;
+    renderPage(currentPage);
+  }
+  function setFit(mode) {
+    fitMode = mode;
+    zoom = 1;
+    renderPage(currentPage);
   }
 
   function close() {
@@ -117,42 +103,27 @@
     pdfDoc = null;
     totalPages = 0;
     currentPage = 1;
-    hasLoaded = false;
     zoom = 1;
   }
 
-  function zoomIn() {
-    zoom = Math.min(zoom + 0.1, 2); // cap logical zoom
-    renderPage(currentPage);
-  }
-  function zoomOut() {
-    zoom = Math.max(zoom - 0.1, 0.5); // min zoom
-    renderPage(currentPage);
-  }
-  function resetZoom() {
-    zoom = 1;
-    renderPage(currentPage);
+  function handleResize() {
+    if (show && pdfDoc) renderPage(currentPage);
   }
 
-  function setFit(mode) {
-    fitMode = mode;
-    zoom = 1; // reset zoom when changing fit mode
-    renderPage(currentPage);
-  }
+  onMount(() => {
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  });
 
-  // Single reactive block to handle opening
-  $: if (show && pdfPath && !hasLoaded) {
+  $: if (show && pdfPath && !pdfDoc) {
     (async () => {
-      // wait for modal + canvas to be in DOM
       await tick();
-      if (!pdfCanvas) {
-        console.log("tick done but canvas missing; waiting another tick");
-        await tick();
-      }
-      if (pdfCanvas && !pdfDoc) {
-        console.log("Triggering initial loadPDF after tick");
-        loadPDF();
-      }
+      if (window.innerWidth < 640) fitMode = 'width';
+      await initPdf();
     })();
   }
 </script>
@@ -166,51 +137,26 @@
     onkeydown={(e) => e.key === 'Escape' && close()}
   >
     <div 
-      class="relative w-full max-w-4xl h-[90vh] rounded-xl border border-sky-500/30 bg-gray-900 shadow-2xl overflow-hidden flex flex-col" 
+      bind:this={modalEl}
+      class="relative w-full max-w-4xl h-screen sm:h-[90vh] sm:max-w-4xl sm:rounded-xl rounded-none sm:border border-sky-500/30 bg-gray-900 shadow-2xl flex flex-col" 
       role="dialog" 
       tabindex="-1" 
       onclick={(e) => e.stopPropagation()} 
       onkeydown={() => {}}
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-4 border-b border-sky-500/30 bg-gray-800/50">
-        <div class="flex items-center gap-4">
-          <h3 class="text-xl font-semibold text-gray-200">My CV</h3>
-          {#if totalPages > 0}
-            <span class="text-sm text-gray-400">
-              Page {currentPage} of {totalPages}
-            </span>
-          {/if}
-          <!-- Zoom indicator -->
-          {#if pdfDoc}
-            <span class="text-xs text-gray-400 ml-2">Zoom: {(zoom * 100).toFixed(0)}%</span>
-          {/if}
-        </div>
-        <div class="flex gap-2">
-          {#if pdfDoc}
-            <div class="flex items-center gap-1 mr-2">
-              <button onclick={() => setFit('page')} class="px-2 py-1 rounded text-xs bg-gray-700 hover:bg-gray-600 text-white border border-transparent {fitMode==='page' ? 'ring-1 ring-sky-500' : ''}" aria-label="Fit entire page">Fit Page</button>
-            </div>
-          {/if}
-          <a 
-            href={pdfPath}
-            download
-            class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded transition-colors text-sm"
-          >
-            Download PDF
-          </a>
-          <button 
-            class="text-2xl text-gray-400 hover:text-white bg-gray-800/80 rounded-full w-10 h-10 flex items-center justify-center" 
-            onclick={close}
-            aria-label="Close CV modal"
-          >
-            ×
-          </button>
-        </div>
+      <div data-cv-header class="flex justify-between items-center p-3 border-b border-sky-500/30 bg-gray-800/60">
+        <h3 class="text-lg font-semibold text-gray-200">My CV</h3>
+        {#if totalPages > 0}
+          <span class="text-xs text-gray-400">Page {currentPage} of {totalPages}</span>
+        {/if}
+        {#if pdfDoc}
+          <span class="text-xs text-gray-400">Zoom {(zoom*100).toFixed(0)}%</span>
+        {/if}
       </div>
       
       <!-- PDF Canvas (always present) -->
-      <div class="relative flex-1 overflow-auto bg-gray-800 flex items-start justify-center p-4">
+      <div class="relative flex-1 overflow-y-auto bg-gray-800 flex items-start justify-center p-4">
         <canvas bind:this={pdfCanvas} class="shadow-2xl bg-white"></canvas>
         {#if isLoading}
           <div class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 text-gray-200">
@@ -226,25 +172,23 @@
         {/if}
       </div>
       
-      <!-- Navigation -->
-      {#if totalPages > 1}
-        <div class="flex justify-center items-center gap-4 p-4 border-t border-sky-500/30 bg-gray-800/50">
-          <button 
-            onclick={prevPage}
-            disabled={currentPage === 1}
-            class="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors text-sm"
-          >
-            Previous
-          </button>
-          <button 
-            onclick={nextPage}
-            disabled={currentPage === totalPages}
-            class="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors text-sm"
-          >
-            Next
-          </button>
+      <!-- Footer Controls -->
+      <div class="flex flex-wrap items-center justify-between gap-3 p-3 border-t border-sky-500/30 bg-gray-800/60 text-sm">
+        <div class="flex items-center gap-2">
+          <a href={pdfPath} download class="px-3 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded font-medium">Download</a>
+          <button onclick={() => setFit('page')} class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded {fitMode==='page' ? 'ring-1 ring-sky-500' : ''}" aria-label="Fit page">Page</button>
+          <button onclick={() => setFit('width')} class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded {fitMode==='width' ? 'ring-1 ring-sky-500' : ''}" aria-label="Fit width">Width</button>
+          <button onclick={zoomOut} class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded" aria-label="Zoom out">−</button>
+          <button onclick={resetZoom} class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded" aria-label="Reset zoom">100%</button>
+          <button onclick={zoomIn} class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded" aria-label="Zoom in">+</button>
         </div>
-      {/if}
+        <div class="flex items-center gap-2">
+          <button onclick={prevPage} disabled={currentPage === 1} class="px-3 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded" aria-label="Previous page">Prev</button>
+          <span class="text-gray-300">{currentPage}/{totalPages || 1}</span>
+          <button onclick={nextPage} disabled={currentPage === totalPages} class="px-3 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded" aria-label="Next page">Next</button>
+          <button onclick={close} class="ml-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded" aria-label="Close viewer">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
