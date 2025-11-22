@@ -4,11 +4,14 @@
   import { gsap } from "gsap";
   import { SplitText } from "gsap/SplitText";
   import Icon from "@iconify/svelte";
-
+  import CVModal from "./CVModal.svelte";
 
   import AOS from "aos";
   import "aos/dist/aos.css"; 
   import { onMount } from "svelte";
+
+  // Get base path from import.meta.env
+  const basePath = import.meta.env.BASE_URL;
 
   AOS.init();
 
@@ -26,6 +29,7 @@
   ];
 
   let titleEl;
+  let showCVModal = false;
 
   onMount(() => {
     const split = new SplitText(titleEl, { type: "chars" });
@@ -71,14 +75,12 @@
         >
           Need a hand?
         </button>
-        <a 
-          href="https://github.com/JadIg/svelte-portfolilo/raw/main/public/Sajjad%20Ahmed%20Mohammed%20CV%20(1).pdf?raw=1" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="px-8 py-4 border-2 border-sky-500 hover:bg-sky-500/10 text-white font-semibold rounded transition-colors cursor-pointer inline-block text-center"
+        <button 
+          onclick={() => showCVModal = true}
+          class="px-8 py-4 border-2 border-sky-500 hover:bg-sky-500/10 text-white font-semibold rounded transition-colors cursor-pointer"
         >
-          Download CV
-        </a>
+          View CV
+        </button>
       </div>
     </div>
 
@@ -126,6 +128,9 @@
       {/each}
     </div>
   </div>
+
+  <!-- CV Modal Component -->
+  <CVModal bind:show={showCVModal} pdfPath="{basePath}Sajjad Ahmed Mohammed CV (1).pdf" />
 </main>
 
 <style>
