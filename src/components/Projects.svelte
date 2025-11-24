@@ -39,10 +39,10 @@
       technologies: ["C#", ".NET", "Console"],
     },
     {
-      name: "JavaScript Mini Games & Tools",
+      name: "A Google-Forms Like Web Application",
       description:
-        "A collection of interactive games and utility tools built with vanilla JavaScript and CSS for practice and fun.",
-      technologies: ["JavaScript", "HTML", "CSS"],
+        "A Google-Forms-like web application for creating, distributing, and analyzing surveys, built with Svelte, C#, and Tailwind CSS.",
+      technologies: ["C#", ".NET Framework", "SQlite", "Svelte", "Tailwind CSS"],
     },
   ];
 </script>
